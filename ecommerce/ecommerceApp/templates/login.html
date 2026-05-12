@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %} Login {% endblock %}
+
+{% block content %}
+<style>
+    /* Mbajmë sfondin e faqes të bardhë ose transparent sipas base.html */
+    .login-wrapper {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .main-container {
+        position: relative;
+        width: 850px;
+        max-width: 100%;
+        background-color: #fff;
+        border-radius: 30px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        overflow: hidden;
+        display: flex;
+        min-height: 550px;
+    }
+
+    /* Pjesa e djathtë (Formulari) */
+    .form-side {
+        width: 60%;
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    /* Pjesa e majtë me ngjyrën tënde origjinale */
+    .info-side {
+        width: 40%;
+        background-color: #D4A373; 
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 40px;
+    }
+
+    /* MOBILE VIEW (Efekti i kurbës nga video) */
+    @media (max-width: 768px) {
+        .main-container {
+            flex-direction: column;
+            height: calc(100vh - 40px);
+            margin: 0;
+            border-radius: 20px;
+        }
+
+        .info-side {
+            width: 100%;
+            height: 35%;
+            /* Kjo krijon harkun në fund të pjesës kafe si në video */
+            border-radius: 0 0 50% 50% / 0 0 25% 25%;
+        }
+
+        .form-side {
+            width: 100%;
+            height: 65%;
+            padding: 30px;
+        }
+    }
+</style>
+
+<div class="login-wrapper">
+    <div class="main-container shadow">
+        
+        <div class="info-side">
+            <h2 class="fw-bold mb-3">Hello, Welcome</h2>
+            <p class="mb-4 small">Don't have an account?</p>
+            <a href="{% url 'registerPage' %}" class="btn btn-outline-light rounded-pill px-4 fw-bold">Register</a>
+        </div>
+
+        <div class="form-side">
+            <h2 class="text-center mb-4 fw-bold" style="color: #D4A373;">Login</h2>
+
+            {% if messages %}
+                <div id="login-msg-container">
+                    {% for message in messages %}
+                        <div class="alert alert-{% if message.tags == 'success' %}success{% else %}danger{% endif %} p-2 small text-center rounded-pill mb-3 shadow-sm">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form method="POST" id="loginForm">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-secondary">Username</label>
+                    <input type="text" class="form-control shadow-none border" name="username" placeholder="Username" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-secondary">Password</label>
+                    <input type="password" class="form-control shadow-none border" name="password" placeholder="Password" required>
+                </div>
+
+                <div class="text-end mb-4">
+                    <a href="{% url 'password_reset' %}" class="small text-decoration-none text-dark fw-bold">Forgot password?</a>
+                </div>
+
+                <button type="submit" class="btn btn-dark w-100 rounded-pill py-2 fw-bold shadow-sm" id="loginBtn">
+                    <span id="loginText">Log in</span>
+                    <span id="loginSpinner" class="spinner-border spinner-border-sm d-none text-warning" role="status"></span>
+                </button>
+            </form>
+
+            <div class="text-center mt-4 d-md-none">
+                <p class="small text-muted mb-0">New here? <a href="{% url 'registerPage' %}" class="fw-bold text-dark text-decoration-none">Register now!</a></p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // Logjika e loading dhe mesazheve mbetet e njëjtë
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', function() {
+            const btn = document.getElementById('loginBtn');
+            const txt = document.getElementById('loginText');
+            const spinner = document.getElementById('loginSpinner');
+            btn.disabled = true; 
+            txt.innerText = "Logging in...";
+            txt.classList.add('text-warning'); 
+            spinner.classList.remove('d-none');
+        });
+    }
+
+    setTimeout(function() {
+        const msgContainer = document.getElementById('login-msg-container');
+        if (msgContainer) {
+            msgContainer.style.transition = "opacity 0.6s ease, transform 0.6s ease";
+            msgContainer.style.opacity = "0";
+            msgContainer.style.transform = "translateY(-10px)";
+            setTimeout(() => msgContainer.remove(), 600);
+        }
+    }, 3000);
+</script>
+{% endblock %}

@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %} Shporta ime {% endblock %}
+
+{% block content %}
+<style>
+    :root {
+        --primary-dark: #1a1a1a;
+        --light-gray: #f8f9fa;
+    }
+
+    .cart-container {
+        padding-top: 30px;
+        padding-bottom: 50px;
+    }
+
+    /* Karta e produktit */
+    .cart-card {
+        background: white;
+        border-radius: 15px;
+        padding: 15px;
+        margin-bottom: 15px;
+        border: 1px solid #eee;
+        transition: transform 0.2s;
+        position: relative;
+    }
+
+    @media (min-width: 768px) {
+        .cart-card {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+        }
+    }
+
+    .product-img {
+        width: 100px;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 10px;
+        flex-shrink: 0;
+    }
+
+    .product-details {
+        flex-grow: 1;
+        margin-left: 20px;
+    }
+
+    /* Badge-at */
+    .custom-badge {
+        background: #f1f1f1;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-right: 5px;
+        display: inline-block;
+        margin-top: 5px;
+    }
+
+    /* Butoni i fshirjes X */
+    .remove-btn {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        color: #ff4d4d;
+        text-decoration: none;
+        z-index: 5;
+        transition: 0.3s;
+    }
+
+    .remove-btn:hover {
+        color: #cc0000;
+        transform: scale(1.2);
+    }
+
+    /* Përmbledhja e pagesës */
+    .summary-box {
+        background: #fff;
+        border-radius: 15px;
+        padding: 25px;
+        border: 1px solid #eee;
+        position: sticky;
+        top: 20px;
+    }
+
+    /* Butoni i Checkout (Linku i ri) */
+    .checkout-btn {
+        background: var(--primary-dark);
+        color: white;
+        width: 100%;
+        display: block;
+        text-align: center;
+        text-decoration: none;
+        padding: 15px;
+        border-radius: 10px;
+        font-weight: bold;
+        margin-top: 20px;
+        transition: 0.3s;
+    }
+
+    .checkout-btn:hover {
+        background: #333;
+        color: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .item-price {
+        font-weight: 800;
+        font-size: 1.2rem;
+        margin-top: 10px;
+    }
+
+    @media (max-width: 767px) {
+        .product-img {
+            width: 80px;
+            height: 100px;
+        }
+        .product-details h5 {
+            font-size: 1rem;
+            padding-right: 30px;
+        }
+    }
+</style>
+
+<div class="cart-container container">
+    <h2 class="fw-bold mb-4">Shporta Ime</h2>
+
+    {% if cart %}
+    <div class="row g-4">
+        <div class="col-lg-8">
+            {% for key, value in cart.items %}
+            <div class="cart-card shadow-sm">
+                
+                <a href="{% url 'remove_from_cart' key %}" class="remove-btn" title="Hiqe nga shporta">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-x-circle-fill" viewBox="0 0 16 16">
+                        <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/>
+                    </svg>
+                </a>
+
+                <div class="d-flex align-items-center w-100">
+                    <img src="{{ value.image }}" class="product-img" alt="{{ value.name }}">
+                    
+                    <div class="product-details">
+                        <h5 class="fw-bold mb-1">{{ value.name }}</h5>
+                        
+                        <div class="mb-2">
+                            {% if value.size and value.size != "Pa Masë" and value.size != "" %}
+                                <span class="custom-badge">Masa: {{ value.size }}</span>
+                            {% endif %}
+                            
+                            {% if value.color and value.color != "Pa Ngjyrë" and value.color != "" %}
+                                <span class="custom-badge bg-dark text-white">Ngjyra: {{ value.color }}</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="item-price text-primary">
+                            ${{ value.price }}
+                            
+                            {% if value.old_price and value.old_price > value.price %}
+                                <del class="text-muted ms-2 fw-normal" style="font-size: 0.9rem;">
+                                    ${{ value.old_price }}
+                                </del>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="mt-4">
+                <a href="{% url 'homePage' %}" class="btn btn-outline-dark px-4 py-2 rounded-pill fw-bold">
+                    ← Vazhdo Blerjet
+                </a>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="summary-box shadow-sm">
+                <h5 class="fw-bold mb-4">Përmbledhja</h5>
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Nëntotali</span>
+                    <span class="fw-bold">${{ total }}</span>
+                </div>
+                
+                <div class="d-flex justify-content-between mb-3">
+                    <span class="text-muted">Transporti</span>
+                    <span class="text-success fw-bold">Falas</span>
+                </div>
+                
+                <hr>
+                
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <span class="h5 fw-bold mb-0">Totali</span>
+                    <span class="h4 fw-bold mb-0 text-primary">${{ total }}</span>
+                </div>
+
+                <a href="{% url 'checkout' %}" class="checkout-btn shadow">
+                    PËRFUNDO POROSINË
+                </a>
+                
+                <div class="text-center mt-3">
+                    <small class="text-muted">Pagesa bëhet në dorëzim (Cash on Delivery)</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <div class="mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" fill="#dee2e6" class="bi bi-cart-x" viewBox="0 0 16 16">
+                <path d="M7.354 5.646a.5.5 0 1 0-.708.708L7.793 7.5 6.646 8.646a.5.5 0 1 0 .708.708L8.5 8.207l1.146 1.147a.5.5 0 0 0 .708-.708L9.207 7.5l1.147-1.146a.5.5 0 0 0-.708-.708L8.5 6.793 7.354 5.646z"/>
+                <path d="M.5 1a.5.5 0 0 0 0 1h1.11l.401 1.607 1.498 7.985A.5.5 0 0 0 4 12h1a2 2 0 1 0 0 4 2 2 0 0 0 0-4h7a2 2 0 1 0 0 4 2 2 0 0 0 0-4h1a.5.5 0 0 0 .491-.408l1.5-8A.5.5 0 0 0 14.5 3H2.89l-.405-1.621A.5.5 0 0 0 2 1H.5zm3.915 10L3.102 4h10.796l-1.313 7h-8.17zM6 14a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm7 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+            </svg>
+        </div>
+        <h3 class="text-muted">Shporta juaj është bosh.</h3>
+        <p class="text-secondary">Duket se nuk keni shtuar asgjë në shportë ende.</p>
+        <a href="{% url 'homePage' %}" class="btn btn-dark mt-3 px-5 py-2 rounded-pill fw-bold">Kthehu te Dyqani</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

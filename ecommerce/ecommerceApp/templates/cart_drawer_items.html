@@ -1,0 +1,21 @@
+{% for key, value in request.session.cart.items %}
+<div class="d-flex align-items-center mb-3 p-2 border-bottom shadow-sm bg-white rounded">
+    <img src="{{ value.image }}" width="60" height="60" class="rounded object-fit-cover me-3">
+    <div class="flex-grow-1">
+        <h6 class="mb-0 small fw-bold">{{ value.name }}</h6>
+        <small class="text-muted d-block mb-0">Masa: {{ value.size }}</small>
+        <small class="text-muted d-block mb-1">Ngjyra: {{ value.color }}</small>
+        
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="input-group input-group-sm" style="width: 80px;">
+                <button class="btn btn-outline-secondary py-0 px-2" onclick="updateQuantity('{{ key }}', 'minus')">-</button>
+                <span class="input-group-text bg-white px-2 border-0" id="qty-drawer-{{ key }}">{{ value.quantity }}</span>
+                <button class="btn btn-outline-secondary py-0 px-2" onclick="updateQuantity('{{ key }}', 'plus')">+</button>
+            </div>
+            <span class="fw-bold small">${{ value.price }}</span>
+        </div>
+    </div>
+</div>
+{% empty %}
+<p class="text-center text-muted py-4">Shporta është bosh.</p>
+{% endfor %}

@@ -1,0 +1,165 @@
+{% load static %}
+<nav class="navbar navbar-expand-lg navColor shadow-sm py-3">
+    <div class="container flex-wrap">
+        <a class="navbar-brand d-flex align-items-center" href="{% url 'homePage' %}">
+            <img src="{% static 'images/logo.png' %}" alt="Logo" height="40">
+        </a>
+
+        <div class="d-flex align-items-center d-lg-none ms-auto">
+            <button class="btn text-white p-0 me-3 border-0 shadow-none" type="button" onclick="handleSearchLogicMobile()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                </svg>
+            </button>
+
+            <a href="{% url 'wishlist_page' %}" class="text-white me-3 position-relative">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" class="bi bi-heart" viewBox="0 0 16 16">
+                    <path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z"/>
+                </svg>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger wishlist-count-badge {% if not request.session.wishlist %}d-none{% endif %}" 
+                      style="font-size: 0.55rem;">
+                    {{ request.session.wishlist|length }}
+                </span>
+            </a>
+
+            <a href="{% url 'cart_page' %}" class="text-white position-relative me-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-cart3" viewBox="0 0 16 16">
+                    <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .49.598l-1 5a.5.5 0 0 1-.465.401l-9.397.472L4.415 11H13a.5.5 0 0 1 0 1H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5M3.102 4l.84 4.479 9.144-.459L13.89 4zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4m7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4m-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2m7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2"/>
+                </svg>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.55rem;">
+                    {{ request.session.cart.values|length }}
+                </span>
+            </a>
+            
+            <div class="me-3">
+                {% if user.is_authenticated %}
+                <div class="dropdown d-inline">
+                    <a href="#" class="text-white text-decoration-none small fw-bold dropdown-toggle" data-bs-toggle="dropdown">{{ user.username }}</a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
+                        {% if user.is_superuser %}<li><a class="dropdown-item fw-bold text-primary" href="/admin/">Admin Panel</a></li>{% endif %}
+                        <li><a class="dropdown-item text-danger" href="{% url 'logout' %}">Dil</a></li>
+                    </ul>
+                </div>
+                {% else %}
+                <a href="{% url 'loginPage' %}" class="text-white text-decoration-none"><i class="fa-regular fa-user" style="font-size: 1.2rem;"></i></a>
+                {% endif %}
+            </div>
+
+            <button class="navbar-toggler border-0 shadow-none text-white p-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
+                <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
+            </button>
+        </div>
+
+        <div class="collapse w-100 d-lg-none mt-2" id="searchCollapseMobile">
+            <form action="{% url 'search_results' %}" method="get" id="searchFormMobile" class="position-relative">
+                <input class="form-control rounded-pill border-0" type="search" placeholder="Search..." name="q" id="searchInputMobile" autocomplete="off">
+                <div id="live-results-mobile" class="list-group position-absolute w-100 shadow-lg d-none" style="z-index: 1050; top: 45px;"></div>
+            </form>
+        </div>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+                <li class="nav-item"><a class="nav-link active text-white fw-semibold" href="{% url 'homePage' %}">Home</a></li>
+                <!-- <li class="nav-item"><a class="nav-link text-white-50" href="{% url 'aboutPage' %}">About</a></li> -->
+                <li class="nav-item"><a class="nav-link text-white-50" href="{% url 'allitemsPage' %}">All Items</a></li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-white-50" href="#" data-bs-toggle="dropdown">Category</a>
+                    <ul class="dropdown-menu shadow border-0 mt-2">
+                        {% for cat in allCat %}
+                        <li><a class="dropdown-item" href="{% url 'categoryPage' cat.category_slug %}">{{cat.category_name}}</a></li>
+                        {% endfor %}
+                    </ul>
+                </li>
+            </ul>
+
+            <div class="d-none d-lg-flex align-items-center justify-content-end">
+                <form action="{% url 'search_results' %}" method="get" id="searchForm" class="d-flex align-items-center position-relative">
+                    <div class="collapse collapse-horizontal" id="searchCollapse">
+                        <input class="form-control rounded-pill border-0 me-2" type="search" placeholder="Search..." name="q" id="searchInput" autocomplete="off" style="width: 200px;">
+                    </div>
+                    <button class="btn text-white p-0 border-0 shadow-none" type="button" onclick="handleSearchLogic()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                        </svg>
+                    </button>
+                    <div id="live-results" class="list-group position-absolute w-100 shadow-lg d-none" style="z-index: 1050; top: 45px;"></div>
+                </form>
+
+                <a href="{% url 'wishlist_page' %}" class="text-white ms-3 position-relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-heart" viewBox="0 0 16 16">
+                        <path d="m8 2.748-.717-.737C5.6.281 2.514.878 1.4 3.053c-.523 1.023-.641 2.5.314 4.385.92 1.815 2.834 3.989 6.286 6.357 3.452-2.368 5.365-4.542 6.286-6.357.955-1.886.838-3.362.314-4.385C13.486.878 10.4.28 8.717 2.01L8 2.748zM8 15C-7.333 4.868 3.279-3.04 7.824 1.143c.06.055.119.112.176.171a3.12 3.12 0 0 1 .176-.17C12.72-3.042 23.333 4.867 8 15z"/>
+                    </svg>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger wishlist-count-badge {% if not request.session.wishlist %}d-none{% endif %}" 
+                          style="font-size: 0.6rem;">
+                        {{ request.session.wishlist|length }}
+                    </span>
+                </a>
+
+                <a href="{% url 'cart_page' %}" class="text-white ms-3 position-relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="currentColor" class="bi bi-cart3" viewBox="0 0 16 16">
+                        <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .49.598l-1 5a.5.5 0 0 1-.465.401l-9.397.472L4.415 11H13a.5.5 0 0 1 0 1H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5M3.102 4l.84 4.479 9.144-.459L13.89 4zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4m7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4m-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2m7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2"/>
+                    </svg>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">
+                        {{ request.session.cart.values|length }}
+                    </span>
+                </a>
+
+                <div class="ms-3 d-none d-lg-block">
+                    {% if user.is_authenticated %}
+                    <div class="dropdown">
+                        <a href="#" class="text-white text-decoration-none fw-semibold border border-white rounded-pill px-3 py-1 small dropdown-toggle" data-bs-toggle="dropdown">{{ user.username }}</a>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
+                            {% if user.is_superuser %}<li><a class="dropdown-item fw-bold text-primary" href="/admin/">Admin Panel</a></li>{% endif %}
+                            <li><a class="dropdown-item text-danger" href="{% url 'logout' %}">Dil</a></li>
+                        </ul>
+                    </div>
+                    {% else %}
+                    <a href="{% url 'loginPage' %}" class="text-white text-decoration-none"><i class="fa-regular fa-user" style="font-size: 1.2rem;"></i></a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<script>
+function handleSearchLogic() {
+    const input = document.getElementById('searchInput');
+    const form = document.getElementById('searchForm');
+    const collapseElement = document.getElementById('searchCollapse');
+    const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseElement, {toggle: false});
+    if (input.value.trim() === "") {
+        collapseElement.classList.contains('show') ? bsCollapse.hide() : (bsCollapse.show(), setTimeout(() => input.focus(), 300));
+    } else { form.submit(); }
+}
+
+function handleSearchLogicMobile() {
+    const input = document.getElementById('searchInputMobile');
+    const form = document.getElementById('searchFormMobile');
+    const collapseElement = document.getElementById('searchCollapseMobile');
+    const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseElement, {toggle: false});
+    if (input.value.trim() === "") {
+        collapseElement.classList.contains('show') ? bsCollapse.hide() : (bsCollapse.show(), setTimeout(() => input.focus(), 300));
+    } else { form.submit(); }
+}
+
+function setupLiveSearch(inputId, resultsId) {
+    const input = document.getElementById(inputId);
+    const resultsDiv = document.getElementById(resultsId);
+    input.addEventListener('input', function() {
+        if (this.value.length > 1) {
+            fetch(`/live-search/?q=${this.value}`).then(res => res.json()).then(data => {
+                resultsDiv.innerHTML = "";
+                if (data.results.length > 0) {
+                    resultsDiv.classList.remove('d-none');
+                    data.results.forEach(item => {
+                        resultsDiv.innerHTML += `<a href="/detail-item/${item.id}" class="list-group-item list-group-item-action border-0 small py-2">${item.name}</a>`;
+                    });
+                } else { resultsDiv.classList.add('d-none'); }
+            });
+        } else { resultsDiv.classList.add('d-none'); }
+    });
+}
+setupLiveSearch('searchInput', 'live-results');
+setupLiveSearch('searchInputMobile', 'live-results-mobile');
+</script>

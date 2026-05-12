@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} Wishlist {% endblock %}
+
+{% block content %}
+<style>
+    /* Mbajmë stilin e butonit X */
+    .wishlist-card-container {
+        position: relative;
+        overflow: hidden;
+        border-radius: 12px;
+    }
+
+    .remove-wishlist-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 99;
+        background: white;
+        color: #dc3545;
+        border: 1px solid #ddd;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        transition: all 0.2s ease;
+    }
+
+    .remove-wishlist-btn:hover {
+        background: #dc3545;
+        color: white;
+        transform: scale(1.1);
+    }
+
+    /* Stili i imazhit si në Home Page */
+    .image-container {
+        position: relative;
+        width: 100%;
+    }
+
+    .card-img-top {
+        height: 280px;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    .wishlist-card-container:hover .card-img-top {
+        transform: scale(1.05);
+    }
+
+    .discount-badge {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background-color: #dc3545;
+        color: white;
+        padding: 5px 12px;
+        font-weight: bold;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        z-index: 10;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+</style>
+
+<section class="container mb-5">
+    <div class="row">
+        <h2 class="mt-5 fw-bold text-uppercase">Lista ime e dëshirave</h2>
+        <hr class="mb-4">
+        
+        {% if items %}
+            {% for item in items %}
+            <div class="col-lg-4 col-12 col-md-6 mb-4" id="item-card-{{ item.id }}">
+                <div class="card wishlist-card-container h-100 shadow-sm border-0">
+                    
+                    <div class="remove-wishlist-btn" onclick="removeFromWishlist('{{ item.id }}')" title="Hiq nga lista">
+                        ✕
+                    </div>
+
+                    <div class="image-container">
+                        {% if item.variants.exists %}
+                            {% with lowest=item.variants.all|dictsort:"price"|first %}
+                                {% if lowest.discount_percentage > 0 %}
+                                    <div class="discount-badge">-{{ lowest.discount_percentage }}%</div>
+                                {% endif %}
+                            {% endwith %}
+                        {% elif item.discount_percentage > 0 %}
+                            <div class="discount-badge">-{{ item.discount_percentage }}%</div>
+                        {% endif %}
+
+                        <a href="{% url 'detailItemPage' item.id %}">
+                            <img src="{{ item.item_image.url }}" class="card-img-top" alt="{{ item.item_name }}">
+                        </a>
+                    </div>
+                    
+                    <div class="card-body text-center d-flex flex-column">
+                        <h5 class="card-title fw-bold">{{ item.item_name }}</h5>
+                        
+                        <div class="mb-3">
+                            {% if item.variants.exists %}
+                                <span class="h5 text-primary fw-bold">${{ item.starting_price|floatformat:2 }}</span>
+                                {% with lowest=item.variants.all|dictsort:"price"|first %}
+                                    {% if lowest.discount_percentage > 0 %}
+                                        <del class="text-muted ms-2 small">${{ lowest.price|floatformat:2 }}</del>
+                                    {% endif %}
+                                {% endwith %}
+                            {% else %}
+                                <span class="h5 text-primary fw-bold">${{ item.starting_price|floatformat:2 }}</span>
+                                {% if item.discount_percentage > 0 %}
+                                    <del class="text-muted ms-2 small">${{ item.item_price|floatformat:2 }}</del>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+
+                        <a href="{% url 'detailItemPage' item.id %}" class="btn btn-dark w-100 mt-auto rounded-pill py-2 fw-bold">
+                            Shiko Produktin
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12 text-center mt-5 py-5">
+                <i class="fa-regular fa-heart fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">Lista juaj është bosh.</h4>
+                <a href="{% url 'allitemsPage' %}" class="btn btn-dark mt-3 px-4 rounded-pill">Eksploro Produktet</a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<script>
+function removeFromWishlist(itemId) {
+    fetch(`/toggle-wishlist/${itemId}/`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'removed') {
+            const element = document.getElementById(`item-card-${itemId}`);
+            element.style.transition = 'all 0.4s ease';
+            element.style.transform = 'scale(0.8)';
+            element.style.opacity = '0';
+            
+            setTimeout(() => {
+                element.remove();
+                if (document.querySelectorAll('.wishlist-card-container').length === 0) {
+                    location.reload();
+                }
+            }, 400);
+
+            const badges = document.querySelectorAll('.wishlist-count-badge');
+            badges.forEach(badge => {
+                badge.innerText = data.total_items;
+                if (data.total_items === 0) badge.classList.add('d-none');
+            });
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+</script>
+{% endblock %}

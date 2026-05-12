@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} All Items {% endblock %}
+
+{% block content %}
+<style>
+    .image-container {
+        position: relative;
+        width: 100%;
+    }
+    
+    .discount-badge {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background-color: #dc3545;
+        color: white;
+        padding: 5px 12px;
+        font-weight: bold;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        z-index: 10;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .card-img-top {
+        height: 280px;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    .card:hover .card-img-top {
+        transform: scale(1.05);
+    }
+
+    .card {
+        overflow: hidden;
+    }
+</style>
+
+<section class="container my-5">
+    <div class="row">
+        {% for info in allItems %}
+        <div class="col-lg-4 col-12 col-md-6 mt-5">
+            <div class="card h-100 shadow-sm border-0">
+                
+                <div class="image-container">
+                    {% if info.variants.exists %}
+                        {% with lowest=info.variants.all|dictsort:"price"|first %}
+                            {% if lowest.discount_percentage > 0 %}
+                                <div class="discount-badge">-{{ lowest.discount_percentage }}%</div>
+                            {% endif %}
+                        {% endwith %}
+                    {% elif info.discount_percentage > 0 %}
+                        <div class="discount-badge">-{{ info.discount_percentage }}%</div>
+                    {% endif %}
+
+                    <a href="{% url 'detailItemPage' info.pk %}">
+                        <img src="{{ info.item_image.url }}" class="card-img-top" alt="{{ info.item_name }}">
+                    </a>
+                </div>
+
+                <div class="card-body text-center">
+                    <h5 class="card-title fw-bold">{{ info.item_name }}</h5>
+                    
+                    <div class="mb-3">
+                        {% if info.variants.exists %}
+                            <span class="h5 text-primary fw-bold">${{ info.starting_price|floatformat:2 }}</span>
+                            
+                            {% with lowest=info.variants.all|dictsort:"price"|first %}
+                                {% if lowest.discount_percentage > 0 %}
+                                    <del class="text-muted ms-2 small">${{ lowest.price|floatformat:2 }}</del>
+                                {% endif %}
+                            {% endwith %}
+                        {% else %}
+                            <span class="h5 text-primary fw-bold">${{ info.starting_price|floatformat:2 }}</span>
+                            
+                            {% if info.discount_percentage > 0 %}
+                                <del class="text-muted ms-2 small">${{ info.item_price|floatformat:2 }}</del>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+
+                    <a href="{% url 'detailItemPage' info.pk %}" class="btn btn-dark w-100">
+                        Shiko Produktin
+                    </a>
+                </div>
+
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

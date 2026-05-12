@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h3 class="mb-4 fw-bold text-center text-uppercase">Të dhënat e dërgimit</h3>
+            
+            <form method="POST" class="card shadow-sm p-4 border-0" style="border-radius: 15px;">
+                {% csrf_token %}
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Emri</label>
+                        <input type="text" name="first_name" class="form-control py-2" 
+                               value="{% if user.is_authenticated %}{{ user.first_name }}{% endif %}" 
+                               placeholder="Emri juaj..." required>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Mbiemri</label>
+                        <input type="text" name="last_name" class="form-control py-2" 
+                               value="{% if user.is_authenticated %}{{ user.last_name }}{% endif %}" 
+                               placeholder="Mbiemri juaj..." required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Adresa e plotë</label>
+                    <input type="text" name="address" class="form-control py-2" placeholder="Rruga, Apartamenti, Qyteti" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Numri i Telefonit</label>
+                    <input type="text" 
+                           name="phone" 
+                           id="phone_input"
+                           class="form-control py-2" 
+                           placeholder="06xXXXXXXX" 
+                           required
+                           maxlength="10"
+                           pattern="06[789][0-9]{7}"
+                           oninput="validatePhone(this)"
+                           oninvalid="validatePhone(this)"
+                           title="Numri duhet të fillojë me 067, 068 ose 069 dhe të ketë saktësisht 10 shifra.">
+                    <small class="text-muted">Shembull: 0691234567</small>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="fw-bold text-uppercase mb-0">Totali:</h4>
+                    <h4 class="text-primary fw-bold mb-0">${{ total }}</h4>
+                </div>
+
+                <button type="submit" class="btn btn-dark w-100 py-3 fw-bold shadow-sm" style="border-radius: 10px;">
+                    PËRFUNDO POROSINË
+                </button>
+                
+                <p class="text-center text-muted mt-3 small">
+                    <i class="bi bi-cash"></i> Pagesa bëhet Cash në dorëzim.
+                </p>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function validatePhone(input) {
+    // Fshin automatikisht cdo gje qe nuk eshte numer
+    input.value = input.value.replace(/[^0-9]/g, '');
+
+    // Kontrollon rregullat e pattern (067, 068, 069 dhe gjatesine 10)
+    if (input.validity.patternMismatch) {
+        input.setCustomValidity("Numër i pavlefshëm! Duhet të fillojë me 067, 068 ose 069 dhe të ketë 10 shifra.");
+    } else if (input.validity.valueMissing) {
+        input.setCustomValidity("Ju lutem plotësoni numrin e telefonit.");
+    } else {
+        input.setCustomValidity(""); 
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %} Search Results {% endblock %}
+
+{% block content %}
+<style>
+    /* Stilimi i kutisë që mban foton dhe etiketën */
+    .image-container {
+        position: relative;
+        width: 100%;
+    }
+    
+    /* Etiketa e kuqe mbi foto */
+    .discount-badge {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background-color: #dc3545; /* Ngjyra e kuqe */
+        color: white;
+        padding: 5px 12px;
+        font-weight: bold;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        z-index: 10;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    /* Për t'i mbajtur fotot e barabarta */
+    .card-img-top {
+        height: 280px;
+        object-fit: cover;
+    }
+
+    /* Rregullim për mesazhin kur nuk ka rezultate */
+    .no-results {
+        text-align: center;
+        margin-top: 100px;
+        font-size: 1.2rem;
+        color: #6c757d;
+    }
+</style>
+
+<section class="container my-5">
+    {% if results %}
+        <h2 class="mb-4">Rezultatet e kërkimit:</h2>
+        <div class="row">
+            {% for info in results %}
+            <div class="col-lg-4 col-12 col-md-6 mt-5">
+                <div class="card h-100 shadow-sm border-0">
+                    
+                    <div class="image-container">
+                        {% if info.discount_percentage > 0 %}
+                            <div class="discount-badge">-{{ info.discount_percentage }}%</div>
+                        {% elif info.variants.all %}
+                            {% for variant in info.variants.all %}
+                                {% if forloop.first and variant.discount_percentage > 0 %}
+                                    <div class="discount-badge">-{{ variant.discount_percentage }}%</div>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+
+                        <a href="{% url 'detailItemPage' info.pk %}">
+                            <img src="{{ info.item_image.url }}" class="card-img-top" alt="{{ info.item_name }}">
+                        </a>
+                    </div>
+
+                    <div class="card-body text-center">
+                        <h5 class="card-title fw-bold">{{ info.item_name }}</h5>
+                        
+                        <div class="mb-3">
+                            <span class="h5 text-primary fw-bold">${{ info.get_discounted_price }}</span>
+                            
+                            {% if info.discount_percentage > 0 or info.variants.first.discount_percentage > 0 %}
+                                <del class="text-muted ms-2 small">
+                                    {% if info.variants.all %}
+                                        ${{ info.variants.first.price }}
+                                    {% else %}
+                                        ${{ info.item_price }}
+                                    {% endif %}
+                                </del>
+                            {% endif %}
+                        </div>
+
+                        <a href="{% url 'detailItemPage' info.pk %}" class="btn btn-dark w-100">
+                            Shiko Produktin
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="no-results">
+            <i class="bi bi-search" style="font-size: 3rem;"></i>
+            <p class="mt-3">Nuk u gjet asgjë për këtë kërkim. Provoni një emër tjetër.</p>
+            <a href="{% url 'homePage' %}" class="btn btn-outline-dark mt-3">Kthehu te Faqja Kryesore</a>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

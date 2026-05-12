@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block title %} Regjistrimi {% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+    .reg-wrapper {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    .main-container {
+        position: relative;
+        width: 900px; /* Pak më i gjerë se logini sepse ka më shumë fusha */
+        max-width: 100%;
+        background-color: #fff;
+        border-radius: 30px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        overflow: hidden;
+        display: flex;
+        min-height: 650px;
+    }
+
+    /* Pjesa e majtë (Informacioni) */
+    .info-side {
+        width: 35%;
+        background-color: #D4A373; 
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 40px;
+    }
+
+    /* Pjesa e djathtë (Formulari) */
+    .form-side {
+        width: 65%;
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    /* MOBILE VIEW (Efekti i kurbës fiks si në video) */
+    @media (max-width: 768px) {
+        .main-container {
+            flex-direction: column;
+            height: auto;
+            border-radius: 20px;
+        }
+
+        .info-side {
+            width: 100%;
+            height: 250px;
+            border-radius: 0 0 50% 50% / 0 0 20% 20%;
+        }
+
+        .form-side {
+            width: 100%;
+            padding: 30px 20px;
+        }
+    }
+</style>
+
+<div class="reg-wrapper">
+    <div class="main-container shadow">
+        
+        <div class="info-side">
+            <h2 class="fw-bold mb-3">Welcome Back</h2>
+            <p class="mb-4 small">Already have an account?</p>
+            <a href="{% url 'loginPage' %}" class="btn btn-outline-light rounded-pill px-4 fw-bold">Log In</a>
+        </div>
+
+        <div class="form-side">
+            <h2 class="text-center mb-4 fw-bold" style="color: #D4A373;">Register</h2>
+
+            <div id="msg-box">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{% if message.tags == 'success' %}success{% else %}danger{% endif %} p-2 small text-center rounded-pill mb-3 shadow-sm">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <input type="hidden" id="reg-success-trigger" value="{% if registration_success %}true{% else %}false{% endif %}">
+
+            <form method="POST" id="registerForm">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold text-secondary">Emri</label>
+                        <input type="text" class="form-control shadow-none border" name="firstName" value="{{ fname|default:'' }}" placeholder="Emri" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label small fw-bold text-secondary">Mbiemri</label>
+                        <input type="text" class="form-control shadow-none border" name="lastName" value="{{ lname|default:'' }}" placeholder="Mbiemri" required>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-secondary">Username</label>
+                    <input type="text" class="form-control shadow-none border" name="username" value="{{ uname|default:'' }}" placeholder="Username" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-secondary">Email</label>
+                    <input type="email" class="form-control shadow-none border" name="email" value="{{ email|default:'' }}" placeholder="email@shembull.com" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-secondary">Password</label>
+                    <div class="input-group">
+                        <input type="password" class="form-control shadow-none border-end-0" id="password" name="password" placeholder="Min. 8 karaktere" required>
+                        <span class="input-group-text bg-white border-start-0" style="cursor: pointer;" onclick="togglePassword('password', 'eye-icon-1')">
+                            <i class="fa-solid fa-eye text-muted" id="eye-icon-1"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label small fw-bold text-secondary">Confirm Password</label>
+                    <div class="input-group">
+                        <input type="password" class="form-control shadow-none border-end-0" id="repassword" name="repassword" placeholder="Rishkruaj fjalëkalimin" required>
+                        <span class="input-group-text bg-white border-start-0" style="cursor: pointer;" onclick="togglePassword('repassword', 'eye-icon-2')">
+                            <i class="fa-solid fa-eye text-muted" id="eye-icon-2"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-dark w-100 rounded-pill py-2 fw-bold shadow-sm" id="regBtn">
+                    <span id="regText">Regjistrohu</span>
+                    <span id="regSpinner" class="spinner-border spinner-border-sm d-none text-warning" role="status"></span>
+                </button>
+            </form>
+
+            <div class="text-center mt-4 d-md-none">
+                <p class="small text-muted mb-0">Keni llogari? <a href="{% url 'loginPage' %}" class="fw-bold text-dark text-decoration-none">Log in</a></p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    function togglePassword(inputId, iconId) {
+        const passwordInput = document.getElementById(inputId);
+        const eyeIcon = document.getElementById(iconId);
+        if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+            eyeIcon.classList.replace("fa-eye", "fa-eye-slash");
+        } else {
+            passwordInput.type = "password";
+            eyeIcon.classList.replace("fa-eye-slash", "fa-eye");
+        }
+    }
+
+    const regForm = document.getElementById('registerForm');
+    if (regForm) {
+        regForm.addEventListener('submit', function() {
+            const btn = document.getElementById('regBtn');
+            const txt = document.getElementById('regText');
+            const spinner = document.getElementById('regSpinner');
+
+            btn.disabled = true; 
+            txt.innerText = "Duke u procesuar...";
+            txt.classList.add('text-warning');
+            spinner.classList.remove('d-none');
+        });
+    }
+
+    window.addEventListener('load', function() {
+        const isSuccess = document.getElementById('reg-success-trigger').value;
+        const msgBox = document.getElementById('msg-box');
+
+        if (isSuccess === "true") {
+            setTimeout(() => { window.location.href = "{% url 'loginPage' %}"; }, 2000);
+        }
+
+        if (msgBox) {
+            setTimeout(() => {
+                msgBox.style.transition = "opacity 0.6s ease";
+                msgBox.style.opacity = "0";
+                setTimeout(() => msgBox.remove(), 600);
+            }, 4000);
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %} {{infoItem.item_name}} page {% endblock %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+    /* Rregullimi i fotos për të hequr hapësirat boshe */
+    .image-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        background-color: #fff;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .image-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .discount-label {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background-color: #dc3545;
+        color: white;
+        padding: 5px 12px;
+        font-weight: bold;
+        border-radius: 4px;
+        z-index: 10;
+        font-size: 1.1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        display: none; 
+    }
+    /* Butoni i zemrës */
+    .wishlist-heart {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 20;
+        background: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .wishlist-heart i {
+        font-size: 1.2rem;
+        color: #ccc;
+    }
+    .wishlist-heart.active i {
+        color: #dc3545 !important;
+    }
+</style>
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-12 col-md-6">
+            <div class="image-container shadow-sm border">
+                <div class="wishlist-heart {% if infoItem.id|stringformat:'s' in request.session.wishlist %}active{% endif %}" 
+                     onclick="toggleWishlist(this, '{{ infoItem.id }}')">
+                    <i class="{% if infoItem.id|stringformat:'s' in request.session.wishlist %}fa-solid fa-heart{% else %}fa-regular fa-heart{% endif %}"></i>
+                </div>
+                <div class="discount-label" id="main-discount-label">
+                    {% if not infoItem.variants.all and infoItem.discount_percentage > 0 %}
+                        -{{ infoItem.discount_percentage }}%
+                    {% endif %}
+                </div>
+                <img src="{{infoItem.item_image.url}}" alt="{{infoItem.item_name}}" class="img-fluid">
+            </div>
+        </div>
+        
+        <div class="col-12 col-md-6 product-info-column">
+            <h1>{{infoItem.item_name}}</h1>
+            <p>{{infoItem.item_description|linebreaks}}</p>
+            
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <span class="h3 text-primary mb-0" id="current-price">
+                    ${{ infoItem.get_discounted_price }}
+                </span>
+                
+                <div id="discount-info" {% if infoItem.discount_percentage > 0 %} style="display: block;" {% else %} style="display: none;" {% endif %}>
+                    <del class="text-muted h5" id="old-price">
+                        {% if infoItem.discount_percentage > 0 %}${{ infoItem.item_price }}{% endif %}
+                    </del>
+                </div>
+            </div>
+
+            <form action="{% url 'add_to_cart' infoItem.id %}" method="POST" id="addToCartForm">
+                {% csrf_token %} 
+                
+                {% if infoItem.variants.all %}
+                    <div class="mt-4">
+                        <h6>Zgjidh Madhësinë (ML):</h6>
+                        <div class="d-flex gap-2">
+                            {% for variant in infoItem.variants.all %}
+                                <input type="radio" class="btn-check variant-radio" name="variant_id" 
+                                       id="variant_{{ variant.id }}" value="{{ variant.id }}" 
+                                       data-price="{{ variant.price }}"
+                                       data-discounted="{{ variant.get_discounted_price }}"
+                                       data-percent="{{ variant.discount_percentage }}">
+                                <label class="btn btn-outline-dark" for="variant_{{ variant.id }}">{{ variant.size_ml }}</label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% elif infoItem.item_sizes.all %}
+                    <div class="mt-4">
+                        <h6>Zgjidh Masën:</h6>
+                        <div class="d-flex gap-2">
+                            {% for size in infoItem.item_sizes.all %}
+                                <input type="radio" class="btn-check" name="size" id="size_{{ size.id }}" value="{{ size.name }}">
+                                <label class="btn btn-outline-dark" for="size_{{ size.id }}">{{ size.name }}</label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if infoItem.item_colors.all %}
+                    <div class="mt-4">
+                        <h6>Zgjidh Ngjyrën:</h6>
+                        <div class="d-flex gap-2">
+                            {% for color in infoItem.item_colors.all %}
+                                <input type="radio" class="btn-check" name="color" id="color_{{ color.id }}" value="{{ color.name }}">
+                                <label class="btn btn-outline-dark" for="color_{{ color.id }}">{{ color.name }}</label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <div class="mt-4">
+                    <button type="button" onclick="handleAddToCart()" class="btn btn-dark btn-lg w-100">
+                        Add to Cart
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Funksioni i ri AJAX për Wishlist
+function toggleWishlist(element, itemId) {
+    const icon = element.querySelector('i');
+    
+    // Thirrja AJAX në server
+    fetch(`/toggle-wishlist/${itemId}/`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'added') {
+            element.classList.add('active');
+            icon.classList.replace('fa-regular', 'fa-solid');
+            icon.classList.add('fa-heart');
+            Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: 'Shtuar në Wishlist', showConfirmButton: false, timer: 2000 });
+        } else if (data.status === 'removed') {
+            element.classList.remove('active');
+            icon.classList.replace('fa-solid', 'fa-regular');
+            icon.classList.add('fa-heart');
+        }
+
+        // PËRDITËSIMI I NUMRIT NË NAVBAR (Në të dyja: Desktop dhe Mobile)
+        const wishlistBadges = document.querySelectorAll('.wishlist-count-badge');
+        wishlistBadges.forEach(badge => {
+            badge.innerText = data.total_items;
+            badge.style.display = data.total_items > 0 ? 'block' : 'none';
+        });
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+// Funksionet e tjera ekzistuese (pa ndryshime)
+function updateDisplay(price, discounted, percent) {
+    const currentPriceEl = document.getElementById('current-price');
+    const oldPriceEl = document.getElementById('old-price');
+    const discountInfo = document.getElementById('discount-info');
+    const mainDiscountLabel = document.getElementById('main-discount-label');
+
+    if (percent > 0) {
+        currentPriceEl.innerText = '$' + discounted;
+        oldPriceEl.innerText = '$' + price;
+        discountInfo.style.display = 'block';
+        if (mainDiscountLabel) {
+            mainDiscountLabel.innerText = '-' + percent + '%';
+            mainDiscountLabel.style.display = 'block';
+        }
+    } else {
+        currentPriceEl.innerText = '$' + price;
+        discountInfo.style.display = 'none';
+        if (mainDiscountLabel) mainDiscountLabel.style.display = 'none';
+    }
+}
+
+document.querySelectorAll('.variant-radio').forEach(radio => {
+    radio.addEventListener('change', function() {
+        updateDisplay(this.dataset.price, this.dataset.discounted, parseInt(this.dataset.percent));
+    });
+});
+
+window.addEventListener('DOMContentLoaded', (event) => {
+    const firstVariant = document.querySelector('.variant-radio');
+    if (firstVariant) {
+        firstVariant.click();
+    } else {
+        const initialPercent = parseInt("{{ infoItem.discount_percentage|default:0 }}");
+        if (initialPercent > 0) {
+            document.getElementById('main-discount-label').style.display = 'block';
+        }
+    }
+});
+
+function handleAddToCart() {
+    const form = document.getElementById('addToCartForm');
+    const hasVariants = document.getElementsByName('variant_id').length > 0;
+    const hasSizes = document.getElementsByName('size').length > 0;
+    const hasColors = document.getElementsByName('color').length > 0;
+    
+    let variantSelected = !hasVariants || Array.from(document.getElementsByName('variant_id')).some(r => r.checked);
+    let sizeSelected = !hasSizes || Array.from(document.getElementsByName('size')).some(r => r.checked);
+    let colorSelected = !hasColors || Array.from(document.getElementsByName('color')).some(r => r.checked);
+
+    if (!variantSelected || !sizeSelected || !colorSelected) {
+        Swal.fire({ title: 'Kujdes!', text: 'Ju lutem plotësoni të gjitha opsionet (Masen/Ngjyrën).', icon: 'warning', confirmButtonColor: '#212529' });
+    } else {
+        form.submit();
+    }
+}
+</script>
+{% endblock %}
